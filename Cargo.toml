@@ -1,0 +1,8 @@
+[package]
+name = "attestation-validator"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+testresult = "0.4.1"
+x509-parser = { version = "0.18.0", features = ["verify"] }
