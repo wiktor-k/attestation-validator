@@ -1,8 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::{BufRead, BufReader},
-};
+use std::{fs::File, io::BufReader};
 
 use x509_parser::{
     pem::Pem,
@@ -16,6 +12,16 @@ pub fn check_signature(cert: &X509Certificate<'_>, issuer: &X509Certificate<'_>)
 
 fn main() -> testresult::TestResult {
     println!("Hello, world!");
+    /*
+    Name 1.3.6.1.4.1.41482.4.1 value [4, 3, 2, 4, 1]
+    Name 1.3.6.1.4.1.41482.4.2 value [2, 4, 2, 11, 217, 253]
+    Name 1.3.6.1.4.1.41482.4.3 value [3, 2, 0, 1]
+    Name 1.3.6.1.4.1.41482.4.4 value [3, 3, 0, 0, 1]
+    Name 1.3.6.1.4.1.41482.4.5 value [3, 9, 0, 0, 0, 0, 0, 0, 0, 1, 0]
+    Name 1.3.6.1.4.1.41482.4.6 value [2, 1, 3]
+    Name 1.3.6.1.4.1.41482.4.9 value [12, 0]
+
+         */
     for path in std::fs::read_dir("./")? {
         let path = path?;
         if path.file_name().display().to_string().ends_with(".pem") {
@@ -55,10 +61,10 @@ fn main() -> testresult::TestResult {
 
     let ext = att.extensions_map()?;
     let mut keys: Vec<_> = ext.keys().collect();
-    keys.sort_by(|left, right| left.to_string().cmp(&right.to_string()));
+    keys.sort_by_key(|left| left.to_string());
     // https://docs.yubico.com/hardware/yubihsm-2/hsm-2-user-guide/hsm2-core-concepts.html#certificate-extensions
     for name in keys {
-        let value = ext.get(&name).unwrap();
+        let value = ext.get(name).unwrap();
         eprintln!("Name {name} value {:?}", value.value);
     }
     eprintln!("Pub key: {:?}", att.public_key());

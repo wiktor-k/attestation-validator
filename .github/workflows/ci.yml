@@ -1,0 +1,37 @@
+name: CI
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  generate-matrix:
+    name: Generate Job Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      recipes: ${{ steps.set-matrix.outputs.recipes }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: taiki-e/install-action@just
+      - run: node ./scripts/ci/create-github-checks.js
+        id: set-matrix
+
+  run-task:
+    name: ${{ matrix.recipes.doc }}
+    runs-on: ubuntu-latest
+    container: archlinux
+    needs: [generate-matrix]
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: ${{fromJSON(needs.generate-matrix.outputs.recipes)}}
+    steps:
+      - run: pacman-key --init
+      - run: pacman -Sy --needed --noconfirm archlinux-keyring
+      - run: pacman -Syu --needed --noconfirm just git ${{ matrix.recipes.packages }}
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: $(( ${{ github.event_name == 'pull_request' && github.event.pull_request.commits || 0 }} + 1 ))
+      # workaround for https://github.com/actions/checkout/issues/1048
+      - run: git config --system --add safe.directory "$GITHUB_WORKSPACE"
+      - run: just --justfile ${{ matrix.recipes.file }} ${{ matrix.recipes.name }}
+        env:
+          CI_DEFAULT_BRANCH: ${{github.event.repository.default_branch}}

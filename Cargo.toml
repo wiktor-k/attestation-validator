@@ -2,6 +2,7 @@
 name = "attestation-validator"
 version = "0.1.0"
 edition = "2024"
+license = "Apache OR MIT"
 
 [dependencies]
 testresult = "0.4.1"
